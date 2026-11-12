@@ -16,6 +16,10 @@ El mar está lleno de tiburones: si te caes, vuelves al último punto de control
 
 La tabla de jugadores muestra tus **Escapes** y tus **Muertes**. Al ganar ves tu tiempo.
 
+## El paisaje
+
+Alrededor del camino hay un atardecer tropical, islotes con palmeras y rocas, un gran volcán que echa humo con ríos de lava, un barco hundido con barriles, torres de vigilancia con focos que barren la playa, la luz giratoria del faro, nubes, gaviotas volando y aletas de tiburón en el mar. Todo es decoración: no se puede tocar, así que no estorba en los saltos.
+
 ## Cómo ponerlo en Roblox Studio
 
 1. Abre Roblox Studio y crea un juego nuevo con la plantilla **Baseplate**.

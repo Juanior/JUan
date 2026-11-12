@@ -497,6 +497,362 @@ barco.Touched:Connect(function(otra)
 end)
 
 ---------------------------------------------------------------------
+-- DECORACIÓN: el paisaje alrededor del mapa
+-- (nada de esto se puede tocar: es solo para que se vea bonito)
+---------------------------------------------------------------------
+local Lighting = game:GetService("Lighting")
+local azar = Random.new(2026) -- siempre sale el mismo paisaje
+
+local decoracion = Instance.new("Folder")
+decoracion.Name = "Decoracion"
+decoracion.Parent = mapa
+
+local function deco(props)
+	props.Parent = props.Parent or decoracion
+	local p = crearPieza(props)
+	p.CanCollide = false
+	p.CanTouch = false
+	p.CanQuery = false
+	return p
+end
+
+-- Atardecer tropical
+Lighting.ClockTime = 17.3
+Lighting.Brightness = 2.5
+Lighting.OutdoorAmbient = Color3.fromRGB(150, 130, 120)
+Lighting.Ambient = Color3.fromRGB(70, 60, 70)
+local atmosfera = Instance.new("Atmosphere")
+atmosfera.Density = 0.3
+atmosfera.Haze = 1.6
+atmosfera.Glare = 0.6
+atmosfera.Color = Color3.fromRGB(255, 200, 160)
+atmosfera.Decay = Color3.fromRGB(120, 90, 140)
+atmosfera.Parent = Lighting
+local brillo = Instance.new("BloomEffect")
+brillo.Intensity = 0.6
+brillo.Threshold = 1.1
+brillo.Parent = Lighting
+local rayos = Instance.new("SunRaysEffect")
+rayos.Intensity = 0.08
+rayos.Parent = Lighting
+local colores = Instance.new("ColorCorrectionEffect")
+colores.Saturation = 0.15
+colores.TintColor = Color3.fromRGB(255, 245, 235)
+colores.Parent = Lighting
+
+-- Palmera con el tronco curvado y cocos
+local function palmera(base, alto)
+	local inclinacion = azar:NextNumber(-0.25, 0.25)
+	local pos = base
+	local segmentos = 6
+	for i = 1, segmentos do
+		local siguiente = pos + Vector3.new(inclinacion * i * 0.6, alto / segmentos, 0)
+		deco({
+			Name = "Tronco",
+			Size = Vector3.new(1.4 - i * 0.08, alto / segmentos + 0.3, 1.4 - i * 0.08),
+			CFrame = CFrame.lookAt((pos + siguiente) / 2, siguiente) * CFrame.Angles(math.rad(90), 0, 0),
+			Color = Color3.fromRGB(130, 90, 50),
+			Material = Enum.Material.Wood,
+		})
+		pos = siguiente
+	end
+	for h = 1, 6 do
+		local ang = h * math.pi / 3 + azar:NextNumber(0, 0.4)
+		deco({
+			Name = "Hoja",
+			Size = Vector3.new(7, 0.3, 1.8),
+			CFrame = CFrame.new(pos) * CFrame.Angles(0, ang, 0) * CFrame.new(3, -0.6, 0) * CFrame.Angles(0, 0, math.rad(-18)),
+			Color = Color3.fromRGB(50, 170, 70),
+			Material = Enum.Material.Grass,
+		})
+	end
+	for c = 1, 3 do
+		deco({
+			Name = "Coco",
+			Shape = Enum.PartType.Ball,
+			Size = Vector3.new(0.9, 0.9, 0.9),
+			Position = pos + Vector3.new(math.cos(c * 2) * 0.7, -0.8, math.sin(c * 2) * 0.7),
+			Color = Color3.fromRGB(90, 60, 30),
+		})
+	end
+end
+
+local function roca(pos, tam)
+	deco({
+		Name = "Roca",
+		Size = Vector3.new(tam, tam * azar:NextNumber(0.6, 1.4), tam * azar:NextNumber(0.7, 1.2)),
+		CFrame = CFrame.new(pos) * CFrame.Angles(azar:NextNumber(0, 1), azar:NextNumber(0, 6), azar:NextNumber(0, 1)),
+		Color = Color3.fromRGB(105, 100, 95),
+		Material = Enum.Material.Rock,
+	})
+end
+
+-- Palmeras curvadas extra en la isla de la prisión
+for i = 1, 8 do
+	local ang = i * math.pi / 4 + 0.4
+	palmera(Vector3.new(math.cos(ang) * 36, 5, math.sin(ang) * 36), azar:NextNumber(12, 17))
+end
+
+-- Islotes pequeños por todo el mar
+for i = 1, 16 do
+	local lado = (i % 2 == 0) and 1 or -1
+	local centro = Vector3.new(azar:NextNumber(-120, 640), 0, lado * azar:NextNumber(55, 190))
+	local radio = azar:NextNumber(10, 22)
+	deco({
+		Name = "Islote",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(4, radio * 2, radio * 2),
+		CFrame = CFrame.new(centro + Vector3.new(0, 0.5, 0)) * CFrame.Angles(0, 0, math.rad(90)),
+		Color = Color3.fromRGB(235, 215, 155),
+		Material = Enum.Material.Sand,
+	})
+	deco({
+		Name = "Cesped",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(1, radio * 1.3, radio * 1.3),
+		CFrame = CFrame.new(centro + Vector3.new(0, 2.7, 0)) * CFrame.Angles(0, 0, math.rad(90)),
+		Color = Color3.fromRGB(80, 170, 70),
+		Material = Enum.Material.Grass,
+	})
+	for _ = 1, azar:NextInteger(1, 3) do
+		local a = azar:NextNumber(0, math.pi * 2)
+		palmera(centro + Vector3.new(math.cos(a) * radio * 0.4, 3, math.sin(a) * radio * 0.4), azar:NextNumber(10, 16))
+	end
+	for _ = 1, 3 do
+		local a = azar:NextNumber(0, math.pi * 2)
+		roca(centro + Vector3.new(math.cos(a) * radio, 1.5, math.sin(a) * radio), azar:NextNumber(2, 4))
+	end
+end
+
+-- Rocas grandes saliendo del mar (lejos del camino)
+for _ = 1, 30 do
+	local lado = azar:NextNumber() > 0.5 and 1 or -1
+	local pos = Vector3.new(azar:NextNumber(-150, 680), azar:NextNumber(0, 5), lado * azar:NextNumber(38, 230))
+	roca(pos, azar:NextNumber(4, 12))
+end
+
+-- El gran volcán humeante detrás de la zona de lava
+local xVolcan, zVolcan = 105, -130
+for i = 0, 7 do
+	local radio = 70 - i * 8
+	deco({
+		Name = "Montana",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(10, radio * 2, radio * 2),
+		CFrame = CFrame.new(xVolcan, 5 + i * 10, zVolcan) * CFrame.Angles(0, 0, math.rad(90)),
+		Color = (i % 2 == 0) and Color3.fromRGB(70, 55, 50) or Color3.fromRGB(85, 65, 55),
+		Material = Enum.Material.Basalt,
+	})
+end
+local crater = deco({
+	Name = "Crater",
+	Shape = Enum.PartType.Cylinder,
+	Size = Vector3.new(1, 18, 18),
+	CFrame = CFrame.new(xVolcan, 80.6, zVolcan) * CFrame.Angles(0, 0, math.rad(90)),
+	Color = Color3.fromRGB(255, 100, 20),
+	Material = Enum.Material.Neon,
+})
+local luzCrater = Instance.new("PointLight")
+luzCrater.Color = Color3.fromRGB(255, 120, 40)
+luzCrater.Range = 60
+luzCrater.Brightness = 3
+luzCrater.Parent = crater
+local humo = Instance.new("Smoke")
+humo.Color = Color3.fromRGB(90, 80, 80)
+humo.Opacity = 0.4
+humo.RiseVelocity = 20
+humo.Size = 30
+humo.Parent = crater
+local fuego = Instance.new("Fire")
+fuego.Size = 20
+fuego.Heat = 20
+fuego.Parent = crater
+-- ríos de lava bajando por el volcán
+for i = 1, 3 do
+	local ang = math.rad(60 + i * 30)
+	local arriba = Vector3.new(xVolcan, 78, zVolcan)
+	local abajo = Vector3.new(xVolcan + math.cos(ang) * 60, 6, zVolcan + math.sin(ang) * 60)
+	deco({
+		Name = "RioDeLava",
+		Size = Vector3.new(3, 1, (arriba - abajo).Magnitude),
+		CFrame = CFrame.lookAt((arriba + abajo) / 2, abajo) * CFrame.new(0, 2, 0),
+		Color = Color3.fromRGB(255, 110, 30),
+		Material = Enum.Material.Neon,
+	})
+end
+
+-- Brillo naranja sobre la zona de lava
+for i = 0, 4 do
+	local luz = Instance.new("PointLight")
+	luz.Color = Color3.fromRGB(255, 120, 40)
+	luz.Range = 30
+	luz.Brightness = 1.5
+	local soporte = deco({ Name = "LuzLava", Size = Vector3.new(1, 1, 1), Position = Vector3.new(50 + i * 28, 4, 0), Transparency = 1 })
+	luz.Parent = soporte
+end
+
+-- Barco hundido junto al puente
+local xRestos, zRestos = 340, 60
+deco({
+	Name = "CascoHundido",
+	Size = Vector3.new(30, 7, 10),
+	CFrame = CFrame.new(xRestos, 1, zRestos) * CFrame.Angles(math.rad(20), math.rad(25), math.rad(-12)),
+	Color = Color3.fromRGB(80, 55, 35),
+	Material = Enum.Material.WoodPlanks,
+})
+deco({
+	Name = "MastilRoto",
+	Size = Vector3.new(1, 18, 1),
+	CFrame = CFrame.new(xRestos + 4, 8, zRestos) * CFrame.Angles(math.rad(25), 0, math.rad(30)),
+	Color = Color3.fromRGB(70, 45, 30),
+	Material = Enum.Material.Wood,
+})
+deco({
+	Name = "VelaRota",
+	Size = Vector3.new(0.2, 7, 9),
+	CFrame = CFrame.new(xRestos + 7, 11, zRestos + 1) * CFrame.Angles(math.rad(10), math.rad(20), math.rad(30)),
+	Color = Color3.fromRGB(200, 190, 170),
+	Material = Enum.Material.Fabric,
+})
+for i = 1, 4 do
+	deco({
+		Name = "Barril",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(2.5, 2, 2),
+		Position = Vector3.new(xRestos - 18 + i * 4, 0.6, zRestos - 10 - i * 2),
+		Color = Color3.fromRGB(120, 80, 45),
+		Material = Enum.Material.Wood,
+	})
+end
+
+-- Torres de vigilancia de la prisión con focos
+local focos = {}
+for _, esquina in ipairs({ Vector3.new(-22, 5, -22), Vector3.new(-22, 5, 22) }) do
+	for _, dx in ipairs({ -1.5, 1.5 }) do
+		for _, dz in ipairs({ -1.5, 1.5 }) do
+			deco({
+				Name = "PataTorre",
+				Size = Vector3.new(0.6, 16, 0.6),
+				Position = esquina + Vector3.new(dx, 8, dz),
+				Color = Color3.fromRGB(90, 90, 90),
+				Material = Enum.Material.Metal,
+			})
+		end
+	end
+	deco({
+		Name = "Caseta",
+		Size = Vector3.new(5, 4, 5),
+		Position = esquina + Vector3.new(0, 18, 0),
+		Color = Color3.fromRGB(110, 110, 120),
+		Material = Enum.Material.Metal,
+	})
+	local foco = deco({
+		Name = "Foco",
+		Size = Vector3.new(1, 1, 1),
+		Position = esquina + Vector3.new(0, 20.5, 0),
+		Color = Color3.fromRGB(255, 255, 200),
+		Material = Enum.Material.Neon,
+	})
+	local luz = Instance.new("SpotLight")
+	luz.Range = 60
+	luz.Angle = 30
+	luz.Brightness = 4
+	luz.Face = Enum.NormalId.Front
+	luz.Parent = foco
+	table.insert(focos, foco)
+end
+
+-- Luz giratoria en la cima del faro
+local lampara = deco({
+	Name = "LamparaFaro",
+	Size = Vector3.new(3, 3, 3),
+	Position = Vector3.new(xTorre, alturaCima + 4, 0),
+	Color = Color3.fromRGB(255, 240, 160),
+	Material = Enum.Material.Neon,
+	Shape = Enum.PartType.Ball,
+})
+local luzFaro = Instance.new("PointLight")
+luzFaro.Range = 40
+luzFaro.Brightness = 3
+luzFaro.Color = Color3.fromRGB(255, 230, 150)
+luzFaro.Parent = lampara
+local haz = deco({
+	Name = "HazDeLuz",
+	Size = Vector3.new(0.5, 3, 120),
+	Color = Color3.fromRGB(255, 245, 190),
+	Material = Enum.Material.Neon,
+	Transparency = 0.75,
+})
+-- columnas que sostienen la lámpara (sin tapar el salto al barco)
+for _, d in ipairs({ Vector3.new(-3, 0, -3), Vector3.new(-3, 0, 3) }) do
+	deco({
+		Name = "ColumnaLampara",
+		Size = Vector3.new(0.6, 4, 0.6),
+		Position = Vector3.new(xTorre, alturaCima + 2.5, 0) + d,
+		Color = Color3.fromRGB(220, 40, 40),
+	})
+end
+
+-- Nubes
+for _ = 1, 22 do
+	local centro = Vector3.new(azar:NextNumber(-200, 750), azar:NextNumber(120, 170), azar:NextNumber(-300, 300))
+	for _ = 1, 4 do
+		deco({
+			Name = "Nube",
+			Shape = Enum.PartType.Ball,
+			Size = Vector3.new(1, 1, 1) * azar:NextNumber(14, 26),
+			Position = centro + Vector3.new(azar:NextNumber(-14, 14), azar:NextNumber(-3, 3), azar:NextNumber(-8, 8)),
+			Color = Color3.fromRGB(255, 240, 235),
+			Material = Enum.Material.SmoothPlastic,
+			Transparency = 0.15,
+			CastShadow = false,
+		})
+	end
+end
+
+-- Gaviotas volando en círculos
+local gaviotas = {}
+for i = 1, 10 do
+	local cuerpo = deco({
+		Name = "Gaviota",
+		Size = Vector3.new(0.8, 0.6, 1.6),
+		Color = Color3.fromRGB(245, 245, 245),
+	})
+	local ala = deco({
+		Name = "Ala",
+		Size = Vector3.new(5, 0.15, 1),
+		Color = Color3.fromRGB(230, 230, 235),
+	})
+	table.insert(gaviotas, {
+		cuerpo = cuerpo,
+		ala = ala,
+		centro = Vector3.new(azar:NextNumber(0, 520), azar:NextNumber(45, 80), azar:NextNumber(-60, 60)),
+		radio = azar:NextNumber(15, 40),
+		fase = i,
+	})
+end
+
+-- Animación de la decoración
+local tiempoDeco = 0
+RunService.Heartbeat:Connect(function(dt)
+	tiempoDeco = tiempoDeco + dt
+	haz.CFrame = CFrame.new(lampara.Position) * CFrame.Angles(0, tiempoDeco * 0.8, 0) * CFrame.new(0, 0, -60)
+	for i, foco in ipairs(focos) do
+		-- los focos barren la playa buscando fugitivos
+		local giro = math.sin(tiempoDeco * 0.7 + i * 2) * 1.2
+		foco.CFrame = CFrame.new(foco.Position) * CFrame.Angles(0, giro + math.pi / 2, 0) * CFrame.Angles(math.rad(-25), 0, 0)
+	end
+	for _, g in ipairs(gaviotas) do
+		local ang = tiempoDeco * 0.35 + g.fase
+		local pos = g.centro + Vector3.new(math.cos(ang) * g.radio, math.sin(tiempoDeco + g.fase) * 2, math.sin(ang) * g.radio)
+		local frente = pos + Vector3.new(-math.sin(ang), 0, math.cos(ang))
+		local cf = CFrame.lookAt(pos, frente)
+		g.cuerpo.CFrame = cf
+		g.ala.CFrame = cf * CFrame.Angles(0, 0, math.sin(tiempoDeco * 6 + g.fase) * 0.4)
+	end
+end)
+
+---------------------------------------------------------------------
 -- Todo lo que se mueve (cada fotograma)
 ---------------------------------------------------------------------
 local tiempo = 0
