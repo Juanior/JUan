@@ -1,4 +1,6 @@
 --[[
+	© 2026 Juan. Isla Sin Salida. Todos los derechos reservados.
+
 	ISLA SIN SALIDA
 	Un juego de obstáculos MUY difícil: escapa de la isla y llega al barco.
 
@@ -497,8 +499,8 @@ titulo.Parent = superficie
 local filas = {}
 for i = 1, 10 do
 	local fila = Instance.new("TextLabel")
-	fila.Size = UDim2.new(0.9, 0, 0.08, 0)
-	fila.Position = UDim2.new(0.05, 0, 0.16 + (i - 1) * 0.083, 0)
+	fila.Size = UDim2.new(0.9, 0, 0.075, 0)
+	fila.Position = UDim2.new(0.05, 0, 0.16 + (i - 1) * 0.078, 0)
 	fila.BackgroundTransparency = 1
 	fila.TextXAlignment = Enum.TextXAlignment.Left
 	fila.TextColor3 = (i == 1) and Color3.fromRGB(255, 215, 0)
@@ -511,6 +513,16 @@ for i = 1, 10 do
 	fila.Parent = superficie
 	filas[i] = fila
 end
+
+local pieTablero = Instance.new("TextLabel")
+pieTablero.Size = UDim2.new(1, 0, 0.05, 0)
+pieTablero.Position = UDim2.new(0, 0, 0.95, 0)
+pieTablero.BackgroundTransparency = 1
+pieTablero.Text = "© 2026 Juan. Isla Sin Salida. Todos los derechos reservados."
+pieTablero.TextColor3 = Color3.fromRGB(200, 180, 150)
+pieTablero.TextScaled = true
+pieTablero.Font = Enum.Font.Gotham
+pieTablero.Parent = superficie
 
 local function actualizarTablero()
 	local lista = {}

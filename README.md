@@ -39,7 +39,7 @@ Para que el ranking se guarde para siempre: publica el juego (**File → Publish
 
 ## La cámara
 
-La cámara gira solo con mover el ratón (no hace falta mantener el clic derecho) y tu personaje mira hacia donde apuntas. Un punto blanco en el centro te dice hacia dónde miras. Pulsa **M** para soltar el ratón y otra vez **M** para volver a girar la cámara. En celular y tablet la cámara se sigue girando con el dedo, como siempre.
+La cámara gira solo con mover el ratón (no hace falta mantener el clic derecho) y tu personaje mira hacia donde apuntas. Un punto blanco en el centro te dice hacia dónde miras. El ratón queda siempre bloqueado en el centro: no se puede soltar. En celular y tablet la cámara se sigue girando con el dedo, como siempre.
 
 ## Cambiar la dificultad
 
@@ -48,3 +48,7 @@ Al principio del script hay una sección `CONFIGURACIÓN`. Por ejemplo:
 - `VelocidadBarras`: más alto = las barras giran más rápido.
 - `TiempoAntesDeCaer`: más bajo = el hielo se rompe antes.
 - `VelocidadMarea`: más alto = la marea del faro sube más rápido.
+
+## Derechos de autor
+
+© 2026 Juan. Todos los derechos reservados. Mira el archivo [LICENSE](LICENSE).

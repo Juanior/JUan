@@ -1,4 +1,6 @@
 --[[
+	© 2026 Juan. Isla Sin Salida. Todos los derechos reservados.
+
 	CRONÓMETRO (para Isla Sin Salida)
 	Muestra arriba en la pantalla cuánto tiempo llevas intentando escapar.
 	El tiempo empieza cada vez que apareces en la prisión y se para al llegar al barco.
@@ -47,6 +49,21 @@ record.TextScaled = true
 record.Font = Enum.Font.Gotham
 record.Text = "Récord: ---"
 record.Parent = fondo
+
+-- Aviso de derechos de autor, abajo a la izquierda
+local derechos = Instance.new("TextLabel")
+derechos.Size = UDim2.new(0, 420, 0, 22)
+derechos.AnchorPoint = Vector2.new(0, 1)
+derechos.Position = UDim2.new(0, 10, 1, -8)
+derechos.BackgroundTransparency = 1
+derechos.TextColor3 = Color3.fromRGB(255, 255, 255)
+derechos.TextTransparency = 0.3
+derechos.TextStrokeTransparency = 0.6
+derechos.TextXAlignment = Enum.TextXAlignment.Left
+derechos.TextScaled = true
+derechos.Font = Enum.Font.Gotham
+derechos.Text = "© 2026 Juan. Isla Sin Salida. Todos los derechos reservados."
+derechos.Parent = pantalla
 
 local function formatoTiempo(centesimas)
 	centesimas = math.max(0, math.floor(centesimas))
