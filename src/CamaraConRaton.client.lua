@@ -20,10 +20,8 @@ local DESPLAZAMIENTO_CAMARA = Vector3.new(1.75, 0, 0) -- la cámara un poco a la
 
 local jugador = Players.LocalPlayer
 
--- En celulares y tablets la cámara ya se gira con el dedo, así que no cambiamos nada
-if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled then
-	return
-end
+-- En celulares y tablets la cámara ya se gira con el dedo, así que ahí no bloqueamos nada
+local esMovil = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
 
 -- Punto blanco en el centro de la pantalla para saber hacia dónde miras
 local pantalla = Instance.new("ScreenGui")
@@ -46,6 +44,26 @@ RunService:BindToRenderStep("CamaraConRaton", Enum.RenderPriority.Camera.Value +
 	local humanoide = personaje and personaje:FindFirstChildOfClass("Humanoid")
 	local raiz = personaje and personaje:FindFirstChild("HumanoidRootPart")
 	local camara = workspace.CurrentCamera
+
+	-- GRAN FINAL: la cámara da vueltas alrededor del barco mientras zarpa
+	if jugador:GetAttribute("Celebrando") and raiz then
+		camara.CameraType = Enum.CameraType.Scriptable
+		local angulo = os.clock() * 0.35
+		local desde = raiz.Position + Vector3.new(math.cos(angulo) * 28, 12, math.sin(angulo) * 28)
+		camara.CFrame = CFrame.lookAt(desde, raiz.Position + Vector3.new(0, 3, 0))
+		punto.Visible = false
+		return
+	elseif camara.CameraType == Enum.CameraType.Scriptable then
+		camara.CameraType = Enum.CameraType.Custom
+		if humanoide then
+			camara.CameraSubject = humanoide
+		end
+	end
+
+	if esMovil then
+		punto.Visible = false
+		return
+	end
 
 	UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
 	UserInputService.MouseIconEnabled = false

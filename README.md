@@ -10,7 +10,7 @@ Un juego de Roblox de obstáculos **muy difícil**: despiertas en una prisión e
 4. **El puente de las barras**: un puente estrecho con 4 barras rojas que giran. Si te tocan, pierdes.
 5. **Las balsas**: balsas que se mueven de lado a lado sobre el mar. Hay que calcular bien el salto.
 6. **El faro**: sube la escalera en espiral mientras la marea mortal sube detrás de ti.
-7. **El barco**: da el último salto desde la cima del faro hasta el barco para escapar.
+7. **El barco**: da el último salto desde la cima del faro hasta el barco. Al llegar, el barco baja al mar y zarpa contigo encima hacia el horizonte, con fuegos artificiales, confeti y la cámara dando vueltas a tu alrededor.
 
 El mar está lleno de tiburones: si te caes, vuelves al último punto de control. **Solo hay 2 puntos de control** (las banderas rojas), por eso es tan difícil.
 

@@ -64,8 +64,8 @@ end
 -- Hace que una pieza mate al tocarla
 local function hacerMortal(pieza)
 	pieza.Touched:Connect(function(otra)
-		local humanoide = obtenerHumanoide(otra)
-		if humanoide and humanoide.Health > 0 then
+		local humanoide, jugador = obtenerHumanoide(otra)
+		if humanoide and humanoide.Health > 0 and not jugador:GetAttribute("Celebrando") then
 			humanoide.Health = 0
 		end
 	end)
@@ -648,6 +648,175 @@ Players.PlayerRemoving:Connect(function(jugador)
 	yaGano[jugador] = nil
 end)
 
+---------------------------------------------------------------------
+-- EL GRAN FINAL: el barco zarpa contigo, con fuegos artificiales y confeti
+---------------------------------------------------------------------
+local TweenService = game:GetService("TweenService")
+local Debris = game:GetService("Debris")
+
+local coloresFiesta = {
+	Color3.fromRGB(255, 70, 70), Color3.fromRGB(255, 200, 40), Color3.fromRGB(80, 220, 120),
+	Color3.fromRGB(70, 160, 255), Color3.fromRGB(220, 90, 255), Color3.fromRGB(255, 140, 200),
+}
+
+local function fuegoArtificial(desde)
+	local color = coloresFiesta[math.random(1, #coloresFiesta)]
+	local cohete = crearPieza({
+		Name = "Cohete",
+		Size = Vector3.new(0.6, 1.5, 0.6),
+		Position = desde,
+		Color = color,
+		Material = Enum.Material.Neon,
+		CanCollide = false,
+		CanTouch = false,
+	})
+	local a0 = Instance.new("Attachment")
+	a0.Position = Vector3.new(0, -0.7, 0)
+	a0.Parent = cohete
+	local a1 = Instance.new("Attachment")
+	a1.Position = Vector3.new(0, 0.7, 0)
+	a1.Parent = cohete
+	local estela = Instance.new("Trail")
+	estela.Attachment0 = a0
+	estela.Attachment1 = a1
+	estela.Color = ColorSequence.new(color)
+	estela.LightEmission = 1
+	estela.Lifetime = 0.4
+	estela.Parent = cohete
+
+	local altura = math.random(28, 45)
+	local subida = TweenService:Create(cohete, TweenInfo.new(0.9, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		Position = desde + Vector3.new(math.random(-6, 6), altura, math.random(-6, 6)),
+	})
+	subida:Play()
+	subida.Completed:Wait()
+
+	-- ¡BOOM!
+	cohete.Transparency = 1
+	local chispas = Instance.new("ParticleEmitter")
+	chispas.Rate = 0
+	chispas.Color = ColorSequence.new(color, Color3.fromRGB(255, 255, 255))
+	chispas.LightEmission = 1
+	chispas.Size = NumberSequence.new(1.2, 0)
+	chispas.Lifetime = NumberRange.new(1, 1.6)
+	chispas.Speed = NumberRange.new(25, 40)
+	chispas.SpreadAngle = Vector2.new(180, 180)
+	chispas.Drag = 2
+	chispas.Acceleration = Vector3.new(0, -12, 0)
+	chispas.Parent = cohete
+	chispas:Emit(90)
+	local destello = Instance.new("PointLight")
+	destello.Color = color
+	destello.Range = 50
+	destello.Brightness = 6
+	destello.Parent = cohete
+	TweenService:Create(destello, TweenInfo.new(0.8), { Brightness = 0 }):Play()
+	Debris:AddItem(cohete, 2.5)
+end
+
+local function crearBarcoDeFiesta(cframe)
+	local partes = {}
+	partes.casco = crearPieza({
+		Name = "BarcoDeFiesta",
+		Size = Vector3.new(8, 3, 16),
+		CFrame = cframe,
+		Color = Color3.fromRGB(110, 70, 40),
+		Material = Enum.Material.Wood,
+		CanCollide = false,
+		CanTouch = false,
+	})
+	partes.mastil = crearPieza({
+		Name = "Mastil",
+		Size = Vector3.new(0.6, 12, 0.6),
+		Color = Color3.fromRGB(90, 60, 30),
+		CanCollide = false,
+		CanTouch = false,
+	})
+	partes.vela = crearPieza({
+		Name = "Vela",
+		Size = Vector3.new(0.2, 8, 8),
+		Color = Color3.fromRGB(250, 250, 240),
+		Material = Enum.Material.Fabric,
+		CanCollide = false,
+		CanTouch = false,
+	})
+	-- confeti saliendo del barco
+	local confeti = Instance.new("ParticleEmitter")
+	confeti.Rate = 70
+	confeti.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, coloresFiesta[1]),
+		ColorSequenceKeypoint.new(0.25, coloresFiesta[2]),
+		ColorSequenceKeypoint.new(0.5, coloresFiesta[3]),
+		ColorSequenceKeypoint.new(0.75, coloresFiesta[4]),
+		ColorSequenceKeypoint.new(1, coloresFiesta[5]),
+	})
+	confeti.Size = NumberSequence.new(0.35)
+	confeti.Lifetime = NumberRange.new(2, 3)
+	confeti.Speed = NumberRange.new(18, 28)
+	confeti.SpreadAngle = Vector2.new(35, 35)
+	confeti.Acceleration = Vector3.new(0, -25, 0)
+	confeti.Rotation = NumberRange.new(0, 360)
+	confeti.RotSpeed = NumberRange.new(-300, 300)
+	confeti.EmissionDirection = Enum.NormalId.Top
+	confeti.Parent = partes.casco
+	return partes
+end
+
+local function colocarBarco(partes, cframe)
+	partes.casco.CFrame = cframe
+	partes.mastil.CFrame = cframe * CFrame.new(0, 7.5, 0)
+	partes.vela.CFrame = cframe * CFrame.new(0.5, 8, 0)
+end
+
+local function celebrar(jugador, texto)
+	local personaje = jugador.Character
+	local raiz = personaje and personaje:FindFirstChild("HumanoidRootPart")
+	if not raiz then return end
+
+	jugador:SetAttribute("Celebrando", true) -- así el mar y la lava no le hacen daño
+	mostrarMensaje(jugador, texto, 8)
+
+	local salida = barco.CFrame
+	local partes = crearBarcoDeFiesta(salida)
+	raiz.Anchored = true
+
+	-- fuegos artificiales mientras dura la fiesta
+	local fiesta = true
+	task.spawn(function()
+		while fiesta do
+			task.spawn(fuegoArtificial, partes.casco.Position + Vector3.new(math.random(10, 30), 2, math.random(-20, 20)))
+			task.wait(0.45)
+		end
+	end)
+
+	-- el barco baja al mar y navega hacia el horizonte
+	local duracion = 8
+	local inicio = os.clock()
+	while os.clock() - inicio < duracion do
+		local t = (os.clock() - inicio) / duracion
+		local bajada = math.min(t * 3, 1) -- en el primer tercio baja hasta el agua
+		local y = salida.Position.Y + (3 - salida.Position.Y) * (1 - (1 - bajada) ^ 2)
+		local x = salida.Position.X + t * t * 160
+		local balanceo = math.sin(os.clock() * 2) * 0.08
+		local cf = CFrame.new(x, y + math.sin(os.clock() * 3) * 0.4, 0) * CFrame.Angles(balanceo, 0, balanceo * 0.5)
+		colocarBarco(partes, cf)
+		if raiz.Parent then
+			raiz.CFrame = cf * CFrame.new(0, 4.5, 3) * CFrame.Angles(0, math.rad(-90), 0)
+		end
+		task.wait()
+	end
+
+	fiesta = false
+	for _, parte in pairs(partes) do
+		parte:Destroy()
+	end
+	jugador:SetAttribute("Celebrando", false)
+	reiniciar(jugador)
+	if jugador.Parent then
+		jugador:LoadCharacter()
+	end
+end
+
 barco.Touched:Connect(function(otra)
 	local humanoide, jugador = obtenerHumanoide(otra)
 	if not jugador or humanoide.Health <= 0 or yaGano[jugador] or not tiempoInicio[jugador] then return end
@@ -674,12 +843,7 @@ barco.Touched:Connect(function(otra)
 	else
 		texto = texto .. "  (tu récord: " .. formatoTiempo(anterior) .. ")"
 	end
-	mostrarMensaje(jugador, texto, 6)
-	task.wait(6)
-	reiniciar(jugador)
-	if jugador.Parent then
-		jugador:LoadCharacter()
-	end
+	celebrar(jugador, texto)
 end)
 
 ---------------------------------------------------------------------
