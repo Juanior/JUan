@@ -14,6 +14,8 @@
 	Puedes cambiar la dificultad en la sección CONFIGURACIÓN de abajo.
 ]]
 
+print("Isla Sin Salida: construyendo el mapa...")
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
@@ -41,9 +43,25 @@ local function crearPieza(props)
 	p.Anchored = true
 	p.TopSurface = Enum.SurfaceType.Smooth
 	p.BottomSurface = Enum.SurfaceType.Smooth
-	for clave, valor in pairs(props) do
-		if clave ~= "Parent" then
+	-- primero la forma y el tamaño, luego todo lo demás
+	local orden = { "Shape", "Size", "CanCollide" }
+	local function poner(clave, valor)
+		-- si una propiedad falla, avisamos pero seguimos construyendo el mapa
+		local ok, err = pcall(function()
 			p[clave] = valor
+		end)
+		if not ok then
+			warn("Isla Sin Salida: no pude poner " .. clave .. " en " .. tostring(props.Name) .. ": " .. tostring(err))
+		end
+	end
+	for _, clave in ipairs(orden) do
+		if props[clave] ~= nil then
+			poner(clave, props[clave])
+		end
+	end
+	for clave, valor in pairs(props) do
+		if clave ~= "Parent" and clave ~= "Shape" and clave ~= "Size" and clave ~= "CanCollide" then
+			poner(clave, valor)
 		end
 	end
 	p.Parent = props.Parent or mapa
