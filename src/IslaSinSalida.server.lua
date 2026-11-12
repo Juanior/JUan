@@ -85,19 +85,43 @@ local function mostrarMensaje(jugador, texto, segundos)
 		pantalla.Parent = gui
 		local etiqueta = Instance.new("TextLabel")
 		etiqueta.Name = "Texto"
-		etiqueta.Size = UDim2.new(0.8, 0, 0, 60)
-		etiqueta.Position = UDim2.new(0.1, 0, 0.12, 0)
-		etiqueta.BackgroundTransparency = 0.3
-		etiqueta.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-		etiqueta.TextColor3 = Color3.fromRGB(255, 230, 120)
+		etiqueta.AnchorPoint = Vector2.new(0.5, 0.5)
+		etiqueta.Size = UDim2.new(0.6, 0, 0, 56)
+		etiqueta.Position = UDim2.new(0.5, 0, 0, 160)
+		etiqueta.BackgroundTransparency = 0.15
+		etiqueta.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		etiqueta.TextColor3 = Color3.fromRGB(255, 255, 255)
+		etiqueta.TextStrokeTransparency = 0.4
 		etiqueta.TextScaled = true
 		etiqueta.Font = Enum.Font.FredokaOne
 		etiqueta.Visible = false
 		etiqueta.Parent = pantalla
+		local esquinas = Instance.new("UICorner")
+		esquinas.CornerRadius = UDim.new(0, 14)
+		esquinas.Parent = etiqueta
+		local borde = Instance.new("UIStroke")
+		borde.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+		borde.Color = Color3.fromRGB(255, 220, 90)
+		borde.Thickness = 3
+		borde.Parent = etiqueta
+		local degradado = Instance.new("UIGradient")
+		degradado.Color = ColorSequence.new(Color3.fromRGB(255, 120, 60), Color3.fromRGB(200, 50, 140))
+		degradado.Parent = etiqueta
+		local margen = Instance.new("UIPadding")
+		margen.PaddingLeft = UDim.new(0, 12)
+		margen.PaddingRight = UDim.new(0, 12)
+		margen.PaddingTop = UDim.new(0, 6)
+		margen.PaddingBottom = UDim.new(0, 6)
+		margen.Parent = etiqueta
 	end
 	local etiqueta = pantalla.Texto
 	etiqueta.Text = texto
 	etiqueta.Visible = true
+	-- aparece con un pequeño salto
+	etiqueta.Size = UDim2.new(0.45, 0, 0, 40)
+	game:GetService("TweenService"):Create(etiqueta, TweenInfo.new(0.35, Enum.EasingStyle.Back), {
+		Size = UDim2.new(0.6, 0, 0, 56),
+	}):Play()
 	local marca = tick()
 	etiqueta:SetAttribute("Marca", marca)
 	task.delay(segundos or 3, function()
@@ -433,6 +457,108 @@ crearPieza({
 	Material = Enum.Material.Fabric,
 	CanCollide = false,
 })
+
+---------------------------------------------------------------------
+-- ZONAS: carteles flotantes, farolillos y datos para la barra de progreso
+---------------------------------------------------------------------
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local zonas = {
+	{ nombre = "La Prisión", icono = "🔒", x = -20 },
+	{ nombre = "El Volcán", icono = "🌋", x = 42 },
+	{ nombre = "Hielo Frágil", icono = "🧊", x = 177 },
+	{ nombre = "Puente de las Barras", icono = "⚔️", x = 298 },
+	{ nombre = "Las Balsas", icono = "🌊", x = 407 },
+	{ nombre = "El Faro", icono = "🗼", x = xTorre - 6 },
+}
+local carpetaZonas = Instance.new("Folder")
+carpetaZonas.Name = "ZonasIsla"
+carpetaZonas:SetAttribute("InicioX", 0)
+carpetaZonas:SetAttribute("MetaX", xBarco)
+carpetaZonas.Parent = ReplicatedStorage
+for i, z in ipairs(zonas) do
+	local valor = Instance.new("NumberValue")
+	valor.Name = tostring(i)
+	valor.Value = z.x
+	valor:SetAttribute("Nombre", z.nombre)
+	valor:SetAttribute("Icono", z.icono)
+	valor.Parent = carpetaZonas
+
+	if i > 1 then
+		-- cartel flotante al empezar cada zona
+		local soporte = crearPieza({
+			Name = "Cartel" .. i,
+			Size = Vector3.new(1, 1, 1),
+			Position = Vector3.new(z.x + 6, 24, 0),
+			Transparency = 1,
+			CanCollide = false,
+			CanTouch = false,
+			CanQuery = false,
+		})
+		local cartel = Instance.new("BillboardGui")
+		cartel.Size = UDim2.new(0, 360, 0, 70)
+		cartel.MaxDistance = 140
+		cartel.LightInfluence = 0
+		cartel.Parent = soporte
+		local texto = Instance.new("TextLabel")
+		texto.Size = UDim2.new(1, 0, 1, 0)
+		texto.BackgroundTransparency = 1
+		texto.Text = z.icono .. " " .. string.upper(z.nombre)
+		texto.TextColor3 = Color3.fromRGB(255, 240, 200)
+		texto.TextStrokeColor3 = Color3.fromRGB(60, 20, 10)
+		texto.TextStrokeTransparency = 0
+		texto.TextScaled = true
+		texto.Font = Enum.Font.FredokaOne
+		texto.Parent = cartel
+	end
+end
+
+-- Farolillos a los lados del camino (fuera del alcance de las barras)
+local function farolillo(pos)
+	crearPieza({
+		Name = "Poste",
+		Size = Vector3.new(0.6, pos.Y, 0.6),
+		Position = Vector3.new(pos.X, pos.Y / 2, pos.Z),
+		Color = Color3.fromRGB(60, 45, 35),
+		Material = Enum.Material.Wood,
+		CanCollide = false,
+		CanTouch = false,
+	})
+	local farol = crearPieza({
+		Name = "Farol",
+		Size = Vector3.new(1.4, 1.8, 1.4),
+		Position = pos + Vector3.new(0, 1, 0),
+		Color = Color3.fromRGB(255, 190, 90),
+		Material = Enum.Material.Neon,
+		CanCollide = false,
+		CanTouch = false,
+	})
+	local luz = Instance.new("PointLight")
+	luz.Color = Color3.fromRGB(255, 180, 90)
+	luz.Range = 18
+	luz.Brightness = 1.5
+	luz.Parent = farol
+end
+for x = 180, xTorre - 10, 24 do
+	farolillo(Vector3.new(x, 17, 14))
+	farolillo(Vector3.new(x + 12, 17, -14))
+end
+
+-- Bordes brillantes en los puntos de control
+for _, numero in ipairs({ 1, 2 }) do
+	local base = mapa:FindFirstChild("PuntoDeControl" .. numero)
+	if base then
+		local aro = crearPieza({
+			Name = "AroControl",
+			Size = Vector3.new(15, 0.3, 15),
+			Position = base.Position + Vector3.new(0, -0.45, 0),
+			Color = Color3.fromRGB(120, 255, 150),
+			Material = Enum.Material.Neon,
+			CanCollide = false,
+			CanTouch = false,
+		})
+		aro.Transparency = 0.2
+	end
+end
 
 ---------------------------------------------------------------------
 -- RANKING: los que menos tardan en escapar

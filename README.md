@@ -20,16 +20,27 @@ La tabla de jugadores muestra tus **Escapes** y tus **Muertes**. Al ganar ves tu
 
 Alrededor del camino hay un atardecer tropical, islotes con palmeras y rocas, un gran volcán que echa humo con ríos de lava, un barco hundido con barriles, torres de vigilancia con focos que barren la playa, la luz giratoria del faro, nubes, gaviotas volando y aletas de tiburón en el mar. Todo es decoración: no se puede tocar, así que no estorba en los saltos.
 
-## Cómo ponerlo en Roblox Studio
+## Cómo ponerlo en Roblox Studio (la forma fácil)
 
-1. Abre Roblox Studio y crea un juego nuevo con la plantilla **Baseplate**.
-2. En el **Explorer**, borra la pieza `Baseplate` que está dentro de `Workspace`.
-3. Haz clic derecho en **ServerScriptService** → **Insert Object** → **Script**.
-4. Abre el archivo [`src/IslaSinSalida.server.lua`](src/IslaSinSalida.server.lua), copia todo el código y pégalo en ese Script.
-5. Abre **StarterPlayer**, haz clic derecho en **StarterPlayerScripts** → **Insert Object** → **LocalScript**.
-6. Copia todo el código de [`src/CamaraConRaton.client.lua`](src/CamaraConRaton.client.lua) y pégalo en ese LocalScript.
-7. Crea otro **LocalScript** en **StarterPlayerScripts** y pega el código de [`src/Cronometro.client.lua`](src/Cronometro.client.lua).
-8. Pulsa **Play**. El mapa se construye solo.
+1. Descarga el archivo [`IslaSinSalida.rbxlx`](IslaSinSalida.rbxlx).
+2. Abre Roblox Studio y elige **File → Open from File…** (o haz doble clic en el archivo).
+3. Pulsa **Play**. El mapa se construye solo y ya tiene todo: cámara, cronómetro, ranking y el gran final.
+
+Para guardarlo como tu juego: **File → Publish to Roblox**.
+
+<details>
+<summary>La forma manual (copiando los scripts)</summary>
+
+1. En un juego nuevo, borra la pieza `Baseplate` de `Workspace`.
+2. En **ServerScriptService** crea un **Script** y pega [`src/IslaSinSalida.server.lua`](src/IslaSinSalida.server.lua).
+3. En **StarterPlayer → StarterPlayerScripts** crea dos **LocalScript** y pega [`src/Pantalla.client.lua`](src/Pantalla.client.lua) en uno y [`src/CamaraConRaton.client.lua`](src/CamaraConRaton.client.lua) en el otro.
+
+Si cambias algo en `src/`, vuelve a crear el archivo con `python3 herramientas/construir_rbxlx.py`.
+</details>
+
+## La pantalla
+
+Arriba en el centro hay un panel con el cronómetro, tu récord y el nombre de la zona en la que estás. Debajo, una barra de progreso con el icono de cada zona te dice cuánto te falta para llegar al barco ⛵. Cada zona tiene además un cartel flotante con su nombre, y hay farolillos a los lados del camino.
 
 ## Cronómetro y ranking
 
