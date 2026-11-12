@@ -28,7 +28,14 @@ Alrededor del camino hay un atardecer tropical, islotes con palmeras y rocas, un
 4. Abre el archivo [`src/IslaSinSalida.server.lua`](src/IslaSinSalida.server.lua), copia todo el código y pégalo en ese Script.
 5. Abre **StarterPlayer**, haz clic derecho en **StarterPlayerScripts** → **Insert Object** → **LocalScript**.
 6. Copia todo el código de [`src/CamaraConRaton.client.lua`](src/CamaraConRaton.client.lua) y pégalo en ese LocalScript.
-7. Pulsa **Play**. El mapa se construye solo.
+7. Crea otro **LocalScript** en **StarterPlayerScripts** y pega el código de [`src/Cronometro.client.lua`](src/Cronometro.client.lua).
+8. Pulsa **Play**. El mapa se construye solo.
+
+## Cronómetro y ranking
+
+Arriba en la pantalla hay un cronómetro que empieza cada vez que apareces en la prisión y se para al llegar al barco. Si mueres después de un punto de control, el tiempo sigue corriendo. En la playa, junto a la salida de la prisión, hay un tablero con **los 10 más rápidos en escapar**, y la tabla de jugadores muestra tu **Mejor tiempo**.
+
+Para que el ranking se guarde para siempre: publica el juego (**File → Publish to Roblox**) y en **Game Settings → Security** activa **Enable Studio Access to API Services**. Sin eso, el ranking funciona igual pero se borra al cerrar el servidor.
 
 ## La cámara
 

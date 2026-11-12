@@ -433,20 +433,163 @@ crearPieza({
 })
 
 ---------------------------------------------------------------------
--- Jugadores: tabla de puntos, reaparecer en el punto de control, ganar
+-- RANKING: los que menos tardan en escapar
+---------------------------------------------------------------------
+-- Para que el ranking se guarde para siempre (aunque se cierre el servidor):
+-- publica el juego y en Roblox Studio ve a Game Settings > Security y activa
+-- "Enable Studio Access to API Services". Si no, el ranking funciona igual,
+-- pero solo dura mientras el servidor esté abierto.
+local DataStoreService = game:GetService("DataStoreService")
+local rankingGuardado = nil
+pcall(function()
+	rankingGuardado = DataStoreService:GetOrderedDataStore("MejoresTiemposIslaSinSalida")
+end)
+
+local mejoresDelServidor = {} -- userId -> { nombre, centesimas }
+local nombres = {}            -- userId -> nombre (para no preguntarlo muchas veces)
+
+local function formatoTiempo(centesimas)
+	local minutos = math.floor(centesimas / 6000)
+	local segundos = math.floor(centesimas / 100) % 60
+	local resto = centesimas % 100
+	return string.format("%d:%02d.%02d", minutos, segundos, resto)
+end
+
+local function nombreDe(userId)
+	if nombres[userId] then return nombres[userId] end
+	local ok, nombre = pcall(function()
+		return Players:GetNameFromUserIdAsync(userId)
+	end)
+	nombres[userId] = ok and nombre or ("Jugador " .. userId)
+	return nombres[userId]
+end
+
+-- El tablero del ranking, en la playa junto a la salida de la prisión
+local tablero = crearPieza({
+	Name = "TableroRanking",
+	Size = Vector3.new(16, 14, 1),
+	CFrame = CFrame.lookAt(Vector3.new(27, 13, -22), Vector3.new(14, 11, 0)),
+	Color = Color3.fromRGB(60, 40, 25),
+	Material = Enum.Material.WoodPlanks,
+})
+for _, dx in ipairs({ -6, 6 }) do
+	crearPieza({
+		Name = "PataTablero",
+		Size = Vector3.new(1, 8, 1),
+		CFrame = tablero.CFrame * CFrame.new(dx, -10, 0.6),
+		Color = Color3.fromRGB(80, 55, 30),
+		Material = Enum.Material.Wood,
+	})
+end
+local superficie = Instance.new("SurfaceGui")
+superficie.Face = Enum.NormalId.Front
+superficie.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+superficie.PixelsPerStud = 40
+superficie.Parent = tablero
+local titulo = Instance.new("TextLabel")
+titulo.Size = UDim2.new(1, 0, 0.15, 0)
+titulo.BackgroundTransparency = 1
+titulo.Text = "LOS MÁS RÁPIDOS EN ESCAPAR"
+titulo.TextColor3 = Color3.fromRGB(255, 210, 80)
+titulo.TextScaled = true
+titulo.Font = Enum.Font.FredokaOne
+titulo.Parent = superficie
+local filas = {}
+for i = 1, 10 do
+	local fila = Instance.new("TextLabel")
+	fila.Size = UDim2.new(0.9, 0, 0.08, 0)
+	fila.Position = UDim2.new(0.05, 0, 0.16 + (i - 1) * 0.083, 0)
+	fila.BackgroundTransparency = 1
+	fila.TextXAlignment = Enum.TextXAlignment.Left
+	fila.TextColor3 = (i == 1) and Color3.fromRGB(255, 215, 0)
+		or (i == 2) and Color3.fromRGB(210, 210, 220)
+		or (i == 3) and Color3.fromRGB(215, 140, 70)
+		or Color3.fromRGB(255, 255, 255)
+	fila.TextScaled = true
+	fila.Font = Enum.Font.GothamBold
+	fila.Text = i .. ". ---"
+	fila.Parent = superficie
+	filas[i] = fila
+end
+
+local function actualizarTablero()
+	local lista = {}
+	local ok = false
+	if rankingGuardado then
+		ok = pcall(function()
+			local pagina = rankingGuardado:GetSortedAsync(true, 10):GetCurrentPage()
+			for _, dato in ipairs(pagina) do
+				table.insert(lista, { nombre = nombreDe(tonumber(dato.key)), centesimas = dato.value })
+			end
+		end)
+	end
+	if not ok then
+		-- sin guardado: usamos los tiempos de este servidor
+		lista = {}
+		for _, dato in pairs(mejoresDelServidor) do
+			table.insert(lista, dato)
+		end
+		table.sort(lista, function(a, b) return a.centesimas < b.centesimas end)
+	end
+	for i = 1, 10 do
+		local dato = lista[i]
+		filas[i].Text = dato and (i .. ". " .. dato.nombre .. "   " .. formatoTiempo(dato.centesimas)) or (i .. ". ---")
+	end
+end
+
+local function guardarTiempo(jugador, centesimas)
+	local anterior = mejoresDelServidor[jugador.UserId]
+	if anterior == nil or centesimas < anterior.centesimas then
+		mejoresDelServidor[jugador.UserId] = { nombre = jugador.Name, centesimas = centesimas }
+	end
+	if rankingGuardado then
+		pcall(function()
+			rankingGuardado:UpdateAsync(tostring(jugador.UserId), function(viejo)
+				if viejo == nil or centesimas < viejo then
+					return centesimas
+				end
+				return nil -- no era mejor: no cambiamos nada
+			end)
+		end)
+	end
+	task.spawn(actualizarTablero)
+end
+
+task.spawn(function()
+	while true do
+		actualizarTablero()
+		task.wait(60)
+	end
+end)
+
+---------------------------------------------------------------------
+-- Jugadores: tabla de puntos, reaparecer, cronómetro y ganar
 ---------------------------------------------------------------------
 local yaGano = {}
 
+-- El cronómetro empieza cada vez que apareces en la prisión
+local function empezarCronometro(jugador)
+	tiempoInicio[jugador] = workspace:GetServerTimeNow()
+	jugador:SetAttribute("InicioCarrera", tiempoInicio[jugador])
+	jugador:SetAttribute("Corriendo", true)
+end
+
 local function reiniciar(jugador)
 	controlDeJugador[jugador] = 0
-	tiempoInicio[jugador] = os.clock()
 	yaGano[jugador] = false
 end
 
 Players.PlayerAdded:Connect(function(jugador)
+	nombres[jugador.UserId] = jugador.Name
+
 	local stats = Instance.new("Folder")
 	stats.Name = "leaderstats"
 	stats.Parent = jugador
+
+	local mejor = Instance.new("StringValue")
+	mejor.Name = "Mejor tiempo"
+	mejor.Value = "---"
+	mejor.Parent = stats
 
 	local escapes = Instance.new("IntValue")
 	escapes.Name = "Escapes"
@@ -458,6 +601,19 @@ Players.PlayerAdded:Connect(function(jugador)
 
 	reiniciar(jugador)
 
+	-- buscar su mejor tiempo guardado
+	if rankingGuardado then
+		task.spawn(function()
+			local ok, guardado = pcall(function()
+				return rankingGuardado:GetAsync(tostring(jugador.UserId))
+			end)
+			if ok and guardado and mejor.Value == "---" then
+				mejor.Value = formatoTiempo(guardado)
+				jugador:SetAttribute("MejorCentesimas", guardado)
+			end
+		end)
+	end
+
 	jugador.CharacterAdded:Connect(function(personaje)
 		local humanoide = personaje:WaitForChild("Humanoid")
 		local raiz = personaje:WaitForChild("HumanoidRootPart")
@@ -465,7 +621,8 @@ Players.PlayerAdded:Connect(function(jugador)
 		local numero = controlDeJugador[jugador] or 0
 		raiz.CFrame = puntosDeControl[numero] or puntoInicio
 		if numero == 0 then
-			mostrarMensaje(jugador, "Escapa de la isla y llega al barco... si puedes", 4)
+			empezarCronometro(jugador)
+			mostrarMensaje(jugador, "Escapa de la isla y llega al barco... ¡el tiempo corre!", 4)
 		end
 		humanoide.Died:Connect(function()
 			muertes.Value = muertes.Value + 1
@@ -481,17 +638,34 @@ end)
 
 barco.Touched:Connect(function(otra)
 	local humanoide, jugador = obtenerHumanoide(otra)
-	if not jugador or humanoide.Health <= 0 or yaGano[jugador] then return end
+	if not jugador or humanoide.Health <= 0 or yaGano[jugador] or not tiempoInicio[jugador] then return end
 	yaGano[jugador] = true
-	local segundos = math.floor(os.clock() - (tiempoInicio[jugador] or os.clock()))
+	local centesimas = math.floor((workspace:GetServerTimeNow() - tiempoInicio[jugador]) * 100)
+	jugador:SetAttribute("Corriendo", false)
+	jugador:SetAttribute("TiempoFinal", centesimas)
+
 	local stats = jugador:FindFirstChild("leaderstats")
+	local anterior = jugador:GetAttribute("MejorCentesimas")
+	local esRecord = anterior == nil or centesimas < anterior
 	if stats then
 		stats.Escapes.Value = stats.Escapes.Value + 1
+		if esRecord then
+			jugador:SetAttribute("MejorCentesimas", centesimas)
+			stats["Mejor tiempo"].Value = formatoTiempo(centesimas)
+		end
 	end
-	mostrarMensaje(jugador, "¡ESCAPASTE! Tiempo: " .. segundos .. " s. ¿Puedes hacerlo más rápido?", 6)
+	guardarTiempo(jugador, centesimas)
+
+	local texto = "¡ESCAPASTE! Tiempo: " .. formatoTiempo(centesimas)
+	if esRecord then
+		texto = texto .. "  ¡NUEVO RÉCORD!"
+	else
+		texto = texto .. "  (tu récord: " .. formatoTiempo(anterior) .. ")"
+	end
+	mostrarMensaje(jugador, texto, 6)
 	task.wait(6)
 	reiniciar(jugador)
-	if jugador.Character then
+	if jugador.Parent then
 		jugador:LoadCharacter()
 	end
 end)
