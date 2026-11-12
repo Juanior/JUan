@@ -22,7 +22,13 @@ La tabla de jugadores muestra tus **Escapes** y tus **Muertes**. Al ganar ves tu
 2. En el **Explorer**, borra la pieza `Baseplate` que está dentro de `Workspace`.
 3. Haz clic derecho en **ServerScriptService** → **Insert Object** → **Script**.
 4. Abre el archivo [`src/IslaSinSalida.server.lua`](src/IslaSinSalida.server.lua), copia todo el código y pégalo en ese Script.
-5. Pulsa **Play**. El mapa se construye solo.
+5. Abre **StarterPlayer**, haz clic derecho en **StarterPlayerScripts** → **Insert Object** → **LocalScript**.
+6. Copia todo el código de [`src/CamaraConRaton.client.lua`](src/CamaraConRaton.client.lua) y pégalo en ese LocalScript.
+7. Pulsa **Play**. El mapa se construye solo.
+
+## La cámara
+
+La cámara gira solo con mover el ratón (no hace falta mantener el clic derecho) y tu personaje mira hacia donde apuntas. Un punto blanco en el centro te dice hacia dónde miras. Pulsa **M** para soltar el ratón y otra vez **M** para volver a girar la cámara. En celular y tablet la cámara se sigue girando con el dedo, como siempre.
 
 ## Cambiar la dificultad
 
